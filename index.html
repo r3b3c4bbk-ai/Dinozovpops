@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dinozov Pops | Catálogo Inteligente</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #f8f1e9; color: #5a4033; font-family: sans-serif; }
+        
+        .hero-section {
+            background-image: linear-gradient(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.4)), url('background.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            min-height: 450px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 2.5rem;
+            padding: 2.5rem;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+        }
+        .float-logo { animation: float 4s ease-in-out infinite; }
+
+        .badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="bg-white p-4 shadow-md sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <img src="logo.png" class="w-12 h-12 rounded-full border-2 border-[#5a4033]" onerror="this.src='https://via.placeholder.com/50'">
+                <h1 class="text-xl font-extrabold text-[#5a4033] tracking-tighter">DINOZOV <span class="font-light text-gray-400">POPS</span></h1>
+            </div>
+            <i class="fas fa-shopping-cart text-xl text-[#5a4033]"></i>
+        </div>
+    </nav>
+
+    <header class="hero-section border-b border-gray-200">
+        <div class="glass-card text-center shadow-2xl">
+            <img src="logo.png" class="w-32 h-32 mx-auto mb-4 rounded-full border-4 border-[#5a4033] shadow-lg float-logo" onerror="this.src='https://via.placeholder.com/150'">
+            <h2 class="text-4xl font-black text-[#5a4033] mb-2 uppercase">DINOZOV POPS</h2>
+            <p class="text-[#8c7365] font-bold text-sm tracking-widest uppercase">Catálogo Actualizado</p>
+        </div>
+    </header>
+
+    <main class="container mx-auto py-12 px-6">
+        <h3 class="text-center text-2xl font-black mb-12 text-[#5a4033] tracking-[0.2em] uppercase">Lo Nuevo en Stock</h3>
+        
+        <div id="contenedor-productos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+            <div class="col-span-full text-center py-20">
+                <i class="fas fa-spinner fa-spin text-4xl text-[#8c7365] mb-4"></i>
+                <p class="font-bold text-gray-400">Buscando los últimos drops...</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const SHEET_ID = '1fgUMVjf90uHRzg71C7yVTH3molwf76Wl3_r0rZ5g1zk';
+        const SHEET_TITLE = 'Hoja 1'; 
+        const FULL_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${SHEET_TITLE}`;
+
+        fetch(FULL_URL)
+            .then(res => res.text())
+            .then(rep => {
+                // Limpieza mejorada de la respuesta de Google
+                const baseText = rep.substring(rep.indexOf('{'), rep.lastIndexOf('}') + 1);
+                const data = JSON.parse(baseText);
+                const contenedor = document.getElementById('contenedor-productos');
+                contenedor.innerHTML = ''; 
+
+                data.table.rows.forEach((fila, index) => {
+                    // Saltamos la fila de encabezados si es necesario
+                    if (index === 0 && fila.c[0] && fila.c[0].v === "Nombre") return;
+                    if (!fila.c[0] || !fila.c[0].v) return;
+
+                    const nombre = fila.c[0] ? fila.c[0].v : "Funko Pop";
+                    const precio = fila.c[1] ? (isNaN(fila.c[1].v) ? fila.c[1].v : '$' + fila.c[1].v) : "$0.00";
+                    const estado = fila.c[2] ? fila.c[2].v : "Disponible";
+                    const imagen = fila.c[3] ? fila.c[3].v : "https://via.placeholder.com/300";
+                    const whatsappLink = fila.c[4] ? fila.c[4].v : "#";
+
+                    const badgeColor = estado.toLowerCase().includes('stock') ? 'bg-green-600' : 'bg-[#5a4033]';
+
+                    contenedor.innerHTML += `
+                        <div class="bg-white rounded-[2.5rem] shadow-xl border border-gray-100 p-8 text-center transform hover:-translate-y-2 transition-all duration-300">
+                            <div class="bg-gray-50 rounded-[2rem] p-6 mb-6 relative overflow-hidden">
+                                <span class="badge text-white ${badgeColor}">${estado}</span>
+                                <img src="${imagen}" class="h-64 mx-auto object-contain drop-shadow-2xl" onerror="this.src='https://via.placeholder.com/300?text=Sin+Imagen'">
+                            </div>
+                            <h3 class="font-black text-[#5a4033] text-lg uppercase mb-2 leading-tight">${nombre}</h3>
+                            <p class="text-[#25D366] font-black text-2xl mb-6">${precio}</p>
+                            <a href="${whatsappLink}" target="_blank" 
+                               class="flex items-center justify-center bg-[#25D366] text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-[#128C7E] transition-all uppercase tracking-tighter">
+                               <i class="fab fa-whatsapp text-xl mr-2"></i> Pedir por WhatsApp
+                            </a>
+                        </div>
+                    `;
+                });
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById('contenedor-productos').innerHTML = 
+                '<div class="col-span-full text-center"><p class="text-red-400 font-bold">Error al conectar con el catálogo.</p><p class="text-gray-500 text-sm">Asegúrate de haber ido a Archivo > Compartir > Publicar en la Web en tu Excel.</p></div>';
+            });
+    </script>
+
+    <footer class="bg-[#5a4033] py-12 text-center text-white mt-12">
+        <p class="font-black text-xl mb-1 uppercase tracking-widest">Dinozov Pops</p>
+        <p class="text-amber-100/50 text-xs mb-6">Expertos en Coleccionables</p>
+        <p class="text-[10px] opacity-40 uppercase">© 2026 Huatulco, Oaxaca. Envíos a todo el país.</p>
+    </footer>
+
+</body>
+</html>
