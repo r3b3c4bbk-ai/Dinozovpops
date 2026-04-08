@@ -3,16 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dinozov Pops | Catálogo Pro</title>
+    <title>Dinozov Pops | Tienda Oficial</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #f8f1e9; color: #5a4033; font-family: sans-serif; }
-        .hero-section { background-image: linear-gradient(rgba(255,255,255,0.4), rgba(255,255,255,0.4)), url('background.png'); background-size: cover; background-position: center; min-height: 300px; display: flex; align-items: center; justify-content: center; }
-        .glass-card { background: rgba(255,255,255,0.75); backdrop-filter: blur(10px); border-radius: 2rem; padding: 2rem; }
-        .tab-btn { transition: all 0.3s; border-bottom: 3px solid transparent; }
+        body { background-color: #f8f1e9; color: #5a4033; font-family: sans-serif; overflow-x: hidden; }
+        .hero-section { background-image: linear-gradient(rgba(255,255,255,0.4), rgba(255,255,255,0.4)), url('background.png'); background-size: cover; background-position: center; min-height: 250px; display: flex; align-items: center; justify-content: center; }
         .tab-btn.active { border-bottom: 3px solid #5a4033; color: #5a4033; font-weight: 800; background: white; }
-        .badge { position: absolute; top: 15px; right: 15px; padding: 5px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; z-index: 10; }
+        
+        /* Estilos del Carrito Lateral */
+        #carrito-panel { transform: translateX(100%); transition: transform 0.3s ease-in-out; }
+        #carrito-panel.open { transform: translateX(0); }
+        .badge-cart { position: absolute; top: -5px; right: -10px; background: #ff4757; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; }
     </style>
 </head>
 <body>
@@ -23,10 +25,10 @@
                 <img src="logo.png" class="w-10 h-10 rounded-full border border-[#5a4033]" onerror="this.src='https://via.placeholder.com/50'">
                 <h1 class="text-lg font-black tracking-tighter uppercase">Dinozov Pops</h1>
             </div>
-            <div class="flex space-x-4">
-                <i class="fas fa-search"></i>
-                <i class="fas fa-shopping-bag"></i>
-            </div>
+            <button onclick="toggleCarrito()" class="relative p-2">
+                <i class="fas fa-shopping-cart text-2xl text-[#5a4033]"></i>
+                <span id="cart-count" class="badge-cart">0</span>
+            </button>
         </div>
     </nav>
 
@@ -35,7 +37,7 @@
             <button onclick="filtrar('Todos')" class="tab-btn active p-4 flex items-center gap-2 text-gray-500 uppercase text-xs font-bold" id="btn-Todos">
                 <i class="fas fa-th-large"></i> Todos
             </button>
-            <button onclick="filtrar('Edicion Limitada')" class="tab-btn p-4 flex items-center gap-2 text-gray-500 uppercase text-xs font-bold" id="btn-Limitada">
+            <button onclick="filtrar('Edición Limitada')" class="tab-btn p-4 flex items-center gap-2 text-gray-500 uppercase text-xs font-bold" id="btn-Limitada">
                 <i class="fas fa-crown"></i> Edición Limitada
             </button>
             <button onclick="filtrar('Exclusivos')" class="tab-btn p-4 flex items-center gap-2 text-gray-500 uppercase text-xs font-bold" id="btn-Exclusivos">
@@ -44,21 +46,40 @@
             <button onclick="filtrar('Nuevos Lanzamientos')" class="tab-btn p-4 flex items-center gap-2 text-gray-500 uppercase text-xs font-bold" id="btn-Nuevos">
                 <i class="fas fa-fire"></i> Nuevos
             </button>
-            <button onclick="filtrar('Pre-ventas')" class="tab-btn p-4 flex items-center gap-2 text-gray-500 uppercase text-xs font-bold" id="btn-Pre">
-                <i class="fas fa-clock"></i> Pre-ventas
-            </button>
         </div>
     </div>
 
     <main class="container mx-auto py-10 px-6">
         <div id="contenedor-productos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            </div>
+            <div class="col-span-full text-center py-20">Cargando colección...</div>
+        </div>
     </main>
+
+    <div id="carrito-panel" class="fixed top-0 right-0 h-full w-full md:w-96 bg-white shadow-2xl z-[100] p-6 flex flex-col">
+        <div class="flex justify-between items-center mb-6 border-b pb-4">
+            <h2 class="text-xl font-black uppercase text-[#5a4033]">Tu Pedido</h2>
+            <button onclick="toggleCarrito()" class="text-2xl">&times;</button>
+        </div>
+        
+        <div id="carrito-items" class="flex-grow overflow-y-auto space-y-4">
+            </div>
+
+        <div class="border-t pt-6 mt-4">
+            <div class="flex justify-between text-xl font-black mb-6">
+                <span>TOTAL:</span>
+                <span id="cart-total">$0.00</span>
+            </div>
+            <button onclick="enviarPedido()" class="w-full bg-[#25D366] text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-[#1da851] transition-all">
+                Finalizar Compra <i class="fab fa-whatsapp ml-2"></i>
+            </button>
+        </div>
+    </div>
 
     <script>
         const SHEET_ID = '1fgUMVjf90uHRzg71C7yVTH3molwf76Wl3_r0rZ5g1zk';
         const FULL_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
         let todosLosProductos = [];
+        let carrito = [];
 
         async function cargarDatos() {
             try {
@@ -71,43 +92,99 @@
         }
 
         function filtrar(categoria) {
-            // Actualizar botones
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             const idBtn = categoria.includes('Limitada') ? 'btn-Limitada' : 
                           categoria.includes('Exclusivos') ? 'btn-Exclusivos' :
-                          categoria.includes('Nuevos') ? 'btn-Nuevos' :
-                          categoria.includes('Pre') ? 'btn-Pre' : 'btn-Todos';
-            document.getElementById(idBtn).classList.add('active');
+                          categoria.includes('Nuevos') ? 'btn-Nuevos' : 'btn-Todos';
+            if(document.getElementById(idBtn)) document.getElementById(idBtn).classList.add('active');
 
             const contenedor = document.getElementById('contenedor-productos');
             contenedor.innerHTML = '';
 
-            const productosFiltrados = categoria === 'Todos' 
+            const filtrados = categoria === 'Todos' 
                 ? todosLosProductos 
-                : todosLosProductos.filter(p => p.c[5] && p.c[5].v === categoria);
+                : todosLosProductos.filter(p => p.c[5] && p.c[5].v.trim() === categoria);
 
-            productosFiltrados.forEach(p => {
+            filtrados.forEach(p => {
                 const nombre = p.c[0].v;
-                const precio = p.c[1] ? (p.c[1].f || '$' + p.c[1].v) : "$0";
-                const estado = p.c[2] ? p.c[2].v : "Disponible";
+                const precioNum = p.c[1] ? p.c[1].v : 0;
+                const precioFormateado = p.c[1] ? (p.c[1].f || '$' + p.c[1].v) : "$0";
                 const img = p.c[3] ? p.c[3].v : "https://via.placeholder.com/300";
-                const wa = p.c[4] ? p.c[4].v : "#";
                 
                 contenedor.innerHTML += `
-                    <div class="bg-white rounded-[2rem] shadow-lg p-6 text-center border border-gray-100">
-                        <div class="bg-gray-50 rounded-2xl p-4 mb-4 relative">
-                            <span class="badge text-white ${estado.includes('Stock') ? 'bg-green-500' : 'bg-orange-400'}">${estado}</span>
+                    <div class="bg-white rounded-[2rem] shadow-lg p-6 text-center border border-gray-100 relative">
+                        <div class="bg-gray-50 rounded-2xl p-4 mb-4">
                             <img src="${img}" class="h-48 mx-auto object-contain">
                         </div>
-                        <h3 class="font-bold text-sm uppercase mb-2">${nombre}</h3>
-                        <p class="text-xl font-black text-[#25D366] mb-4">${precio}</p>
-                        <a href="${wa}" class="block bg-[#25D366] text-white py-3 rounded-xl font-bold uppercase text-xs">
-                            <i class="fab fa-whatsapp"></i> Apartar
-                        </a>
+                        <h3 class="font-bold text-sm uppercase mb-2 h-10 overflow-hidden">${nombre}</h3>
+                        <p class="text-xl font-black text-[#5a4033] mb-4">${precioFormateado}</p>
+                        <button onclick="agregarAlCarrito('${nombre}', ${precioNum}, '${img}')" 
+                                class="w-full bg-[#5a4033] text-white py-3 rounded-xl font-bold uppercase text-xs hover:bg-[#3d2b22] transition-colors">
+                            Agregar al Carrito
+                        </button>
                     </div>
                 `;
             });
         }
+
+        function toggleCarrito() {
+            document.getElementById('carrito-panel').classList.toggle('open');
+        }
+
+        function agregarAlCarrito(nombre, precio, img) {
+            carrito.push({ nombre, precio, img });
+            actualizarCarrito();
+            // Animación simple de feedback
+            const btn = event.target;
+            btn.innerText = "¡Añadido!";
+            setTimeout(() => btn.innerText = "Agregar al Carrito", 1000);
+        }
+
+        function actualizarCarrito() {
+            const container = document.getElementById('carrito-items');
+            const count = document.getElementById('cart-count');
+            const total = document.getElementById('cart-total');
+            
+            count.innerText = carrito.length;
+            container.innerHTML = '';
+            let suma = 0;
+
+            carrito.forEach((item, index) => {
+                suma += item.precio;
+                container.innerHTML += `
+                    <div class="flex items-center gap-4 bg-gray-50 p-3 rounded-xl">
+                        <img src="${item.img}" class="w-12 h-12 object-contain">
+                        <div class="flex-grow text-left">
+                            <p class="text-xs font-bold uppercase truncate w-32">${item.nombre}</p>
+                            <p class="text-sm font-black">$${item.precio}</p>
+                        </div>
+                        <button onclick="eliminarDelCarrito(${index})" class="text-red-400 p-2 text-xl">&times;</button>
+                    </div>
+                `;
+            });
+            total.innerText = `$${suma.toFixed(2)}`;
+        }
+
+        function eliminarDelCarrito(index) {
+            carrito.splice(index, 1);
+            actualizarCarrito();
+        }
+
+        function enviarPedido() {
+            if (carrito.length === 0) return alert("El carrito está vacío");
+            
+            let mensaje = "¡Hola Dinozov Pops! Quisiera comprar:\n\n";
+            let suma = 0;
+            carrito.forEach(item => {
+                mensaje += `• ${item.nombre} ($${item.precio})\n`;
+                suma += item.precio;
+            });
+            mensaje += `\n*TOTAL: $${suma.toFixed(2)}*`;
+            
+            const url = `https://wa.me/529615706515?text=${encodeURIComponent(mensaje)}`;
+            window.open(url, '_blank');
+        }
+
         cargarDatos();
     </script>
 </body>
